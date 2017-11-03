@@ -27,7 +27,6 @@ class AudioEngine {
 
 public:
     AudioEngine();
-    ~AudioEngine();
     void start();
     void stop();
     aaudio_data_callback_result_t recordingCallback(void *audioData, int32_t i);

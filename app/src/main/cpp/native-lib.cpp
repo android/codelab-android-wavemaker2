@@ -33,7 +33,13 @@ JNIEXPORT void JNICALL
 Java_com_example_donturner_wavemaker2_MainActivity_setRecording(JNIEnv *env, jobject instance,
                                                                 jboolean isRecording) {
     __android_log_print(ANDROID_LOG_DEBUG, "native-lib", "Recording? %d", isRecording);
-    audioEngine.setRecording(isRecording);
+
+    // convert to a bool
+    bool isRecordingNative = (bool)(isRecording == JNI_TRUE);
+
+    __android_log_print(ANDROID_LOG_DEBUG, "native-lib", "Recording? %s", isRecordingNative ? "TRUE" : "FALSE");
+
+    audioEngine.setRecording(isRecordingNative);
 }
 
 JNIEXPORT void JNICALL
@@ -43,7 +49,6 @@ Java_com_example_donturner_wavemaker2_MainActivity_setPlaying(JNIEnv *env, jobje
     audioEngine.setPlaying(isPlaying);
 }
 
-}extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_donturner_wavemaker2_MainActivity_stopEngine(JNIEnv *env, jobject instance) {
 

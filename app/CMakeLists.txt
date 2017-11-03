@@ -9,6 +9,7 @@ add_library( native-lib SHARED
 target_link_libraries( native-lib
                        log
                        aaudio)
+
 set(GOOGLETEST_ROOT ${ANDROID_NDK}/sources/third_party/googletest/googletest)
 add_library(gtest STATIC ${GOOGLETEST_ROOT}/src/gtest_main.cc ${GOOGLETEST_ROOT}/src/gtest-all.cc)
 target_include_directories(gtest PRIVATE ${GOOGLETEST_ROOT})

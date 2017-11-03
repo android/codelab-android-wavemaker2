@@ -16,86 +16,42 @@
 
 #include "SoundRecording.h"
 
-// At a sample rate of 48000 samples/second 262144 (2^18) represents 5.46 seconds of audio.
-// Each sample is stored as a float (4 bytes) so a mono SoundRecording (channelCount = 1)
-// will allocate 1MB of memory. A stereo recording will allocate 2MB of memory.
-constexpr int kMaxSamples = 262144; // 1 << 18;
-
 SoundRecording::SoundRecording(const int32_t channelCount) :
-        mChannelCount(channelCount) {
-
-    mData = new float*[channelCount];
-    for (int i = 0; i < channelCount; ++i) {
-        mData[i] = new float[kMaxSamples];
-    }
+        mChannelCount(channelCount),
+        mData(std::make_unique<float[]>((size_t)kMaxFrames * channelCount)){
 }
 
-SoundRecording::~SoundRecording(){
-    for (int i = 0; i < mChannelCount; ++i) {
-        delete[] mData[i];
-    }
-    delete mData;
-}
+int32_t SoundRecording::write(const float *sourceData, int32_t numFrames) {
 
-void SoundRecording::write(const float *sourceData, int32_t numFrames) {
-
-    // Check that data will fit, if it doesn't fill the data buffer(s) up to capacity.
-    if (mWriteIndex + numFrames > kMaxSamples) {
-        numFrames = kMaxSamples - mWriteIndex;
+    // Check that data will fit, if it doesn't just write as much as we can.
+    if (mWriteFrameIndex + numFrames > kMaxFrames) {
+        numFrames = kMaxFrames - mWriteFrameIndex;
     }
 
     for (int i = 0; i < numFrames; ++i) {
         for (int j = 0; j < mChannelCount; ++j) {
-            mData[j][mWriteIndex] = sourceData[(i*mChannelCount)+j];
+            mData[(mWriteFrameIndex*mChannelCount)+j] = sourceData[(i*mChannelCount)+j];
         }
-        mWriteIndex++;
+        mWriteFrameIndex++;
     }
-    mTotalLength = mWriteIndex;
+
+    mTotalFrames += numFrames;
+    return numFrames;
 }
 
 int32_t SoundRecording::read(float *targetData, int32_t numFrames){
 
-    // If not looping then check that we're not attempting to read too much data
-    if (!mIsLooping && mReadIndex + numFrames > mTotalLength) numFrames = mTotalLength - mReadIndex;
+    // Check that we're not attempting to read too much data (unless we're looping)
+    if (!mIsLooping && mReadFrameIndex + numFrames > mTotalFrames){
+        numFrames = mTotalFrames - mReadFrameIndex;
+    }
 
-    for (int i = 0; i < numFrames; ++i){
+    for (int i = 0; i < numFrames; ++i) {
         for (int j = 0; j < mChannelCount; ++j) {
-            targetData[(i*mChannelCount)+j] = mData[j][mReadIndex];
+            targetData[(i*mChannelCount)+j] = mData[(mReadFrameIndex*mChannelCount)+j];
         }
-        mReadIndex++;
-        if (mReadIndex >= mTotalLength) mReadIndex = 0;
+        mReadFrameIndex++;
+        if (mReadFrameIndex >= mTotalFrames) mReadFrameIndex = 0;
     }
     return numFrames;
-}
-
-void SoundRecording::clear(){
-    mTotalLength = 0;
-}
-
-bool SoundRecording::isFull() {
-    return (mTotalLength == kMaxSamples);
-}
-
-void SoundRecording::resetPlayHead() {
-    mReadIndex = 0;
-}
-
-void SoundRecording::resetWriteHead() {
-    mWriteIndex = 0;
-}
-
-void SoundRecording::setLooping(bool isLooping) {
-    mIsLooping = isLooping;
-}
-
-int32_t SoundRecording::getLength() {
-    return mTotalLength;
-}
-
-int32_t SoundRecording::getChannelCount() {
-    return mChannelCount;
-}
-
-int32_t SoundRecording::getMaxSamples() {
-    return kMaxSamples;
 }

@@ -41,12 +41,6 @@ AudioEngine::AudioEngine() {
     mSoundRecording.setLooping(true);
 }
 
-AudioEngine::~AudioEngine(){
-    if (mConversionBuffer != nullptr){
-        delete[] mConversionBuffer;
-    }
-}
-
 void AudioEngine::start() {
 
     AAudioStreamBuilder *playbackBuilder;
@@ -169,7 +163,12 @@ aaudio_data_callback_result_t AudioEngine::playbackCallback(void *audioData, int
 }
 
 void AudioEngine::setRecording(bool isRecording) {
-    if (mIsRecording) mSoundRecording.resetWriteHead();
+
+    // If we're starting a new recording then clear the old one
+    if (isRecording && !mIsRecording) {
+        mSoundRecording.clear();
+        mSoundRecording.resetWriteHead();
+    }
     mIsRecording.store(isRecording);
 }
 

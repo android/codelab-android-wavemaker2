@@ -20,32 +20,37 @@
 #include <cstdint>
 #include <array>
 #include "Definitions.h"
+#include <android/log.h>
+#include <memory>
+
 
 // At a sample rate of 48000 samples/second 262144 (2^18) represents 5.46 seconds of audio.
 // Each sample is stored as a float (4 bytes) so a mono SoundRecording (channelCount = 1)
 // will allocate 1MB of memory. A stereo recording will allocate 2MB of memory.
-constexpr int kMaxSamples = 262144; // 1 << 18;
+constexpr int kMaxFrames = 262144; // 1 << 18;
 
 
 class SoundRecording {
 
 public:
     SoundRecording(const int32_t channelCount = kChannelCountMono);
-    ~SoundRecording();
-    void write(const float *sourceData, int32_t numFrames);
+    int32_t write(const float *sourceData, int32_t numFrames);
     int32_t read(float *targetData, int32_t numFrames);
-    bool isFull() { return (mTotalLength == kMaxSamples); };
-    void resetPlayHead() { mReadIndex = 0; };
-    void resetWriteHead() { mWriteIndex = 0; };
+    void clear() { mTotalFrames = 0; };
+    bool isFull() const { return (mTotalFrames == kMaxFrames); };
+    void resetPlayHead() { mReadFrameIndex = 0; };
+    void resetWriteHead() { mWriteFrameIndex = 0; };
     void setLooping(bool isLooping) { mIsLooping = isLooping; };
-    int32_t getLength() { return mTotalLength; };
+    int32_t getLength() const { return mTotalFrames; };
+    int32_t getChannelCount() const { return mChannelCount; };
+    static int32_t getMaxFrames() { return kMaxFrames; };
 
 private:
     int32_t mChannelCount;
-    int32_t mWriteIndex = 0;
-    int32_t mReadIndex = 0;
-    float **mData;
-    int32_t mTotalLength = 0;
+    int32_t mWriteFrameIndex = 0;
+    int32_t mReadFrameIndex = 0;
+    std::unique_ptr<float[]> mData;
+    int32_t mTotalFrames = 0;
     bool mIsLooping = false;
 };
 

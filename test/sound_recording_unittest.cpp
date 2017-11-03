@@ -17,45 +17,26 @@
 #include <gtest/gtest.h>
 #include "../app/src/main/cpp/SoundRecording.h"
 
-/**
- * Tests:
- *
- * - Can write data
- * - Can read data
- * - Cannot write more than max capacity
- * - Reports full when is full
- * - Does not report full when not full
- * - Cannot read more than has been written (unless looping?)
- *
- * TODO:
- * - Move DEFAULT_CHANNEL_COUNT inside definition
- *
- */
-
 class SoundRecordingTest : public ::testing::Test {
 protected:
 
     void SetUp(){
         sr = new SoundRecording();
         sr2 = new SoundRecording(2);
-        sr3 = new SoundRecording();
     }
 
     void TearDown(){
         delete sr;
         delete sr2;
-        delete sr3;
     }
 
     SoundRecording *sr;
     SoundRecording *sr2;
-    SoundRecording *sr3;
 
     float sourceData[10] = {0.1, 0.2, 0.3, 0.4, 0.5, -0.1F, -0.2F, -0.3F, -0.4F, -0.5F};
-    float sourceData2F[10] = {0.01, 0.02, 0.03, 0.04, 0.05, -0.01F, -0.02F, -0.03F, -0.04F, -0.05F};
     float targetData[20];
 
-    int32_t dataCapacity = SoundRecording::getMaxSamples();
+    int32_t dataCapacity = SoundRecording::getMaxFrames();
 };
 
 TEST_F (SoundRecordingTest, WriteOne){
@@ -72,7 +53,7 @@ TEST_F (SoundRecordingTest, WriteMax){
     float targetData[dataCapacity];
 
     for (int i = 0; i < dataCapacity; ++i) {
-        sourceData[i] = 1;
+        sourceData[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     }
 
     sr->write(sourceData, dataCapacity);
@@ -82,6 +63,14 @@ TEST_F (SoundRecordingTest, WriteMax){
     for (int i = 0; i < dataCapacity; ++i) {
         ASSERT_EQ(sourceData[i], targetData[i]);
     }
+}
+
+TEST_F (SoundRecordingTest, WriteMoreThanMaxCapacity){
+
+    const int numFrames = dataCapacity+1;
+    float sourceData[numFrames];
+    int framesWritten = sr->write(sourceData, numFrames);
+    ASSERT_EQ(framesWritten, dataCapacity);
 }
 
 TEST_F (SoundRecordingTest, ReportsFullWhenFull){
@@ -131,12 +120,26 @@ TEST_F (SoundRecordingTest, ReadAfterReset){
     ASSERT_EQ(targetData[0], sourceData[0]);
 }
 
-TEST_F (SoundRecordingTest, ReadAfterEnablingLoopMode){
+TEST_F (SoundRecordingTest, CanReadMoreDataAfterEnablingLoopMode){
 
     sr->write(sourceData, 5);
     sr->setLooping(true);
     int framesRead = sr->read(targetData, 10);
     ASSERT_EQ(framesRead, 10);
+}
+
+TEST_F (SoundRecordingTest, ReadingDataWrapsInLoopMode){
+
+    constexpr int numFramesToWrite = 5;
+    constexpr int numFramesToRead = 10;
+
+    sr->write(sourceData, numFramesToWrite);
+    sr->setLooping(true);
+    sr->read(targetData, numFramesToRead);
+
+    for (int i = 0; i < numFramesToRead; ++i) {
+        ASSERT_EQ(targetData[i], sourceData[i%numFramesToWrite]) << "Failed at i=" << i;
+    }
 }
 
 TEST_F (SoundRecordingTest, StereoRecordingReportsCorrectChannelCount){
@@ -156,18 +159,10 @@ TEST_F (SoundRecordingTest, StereoRecordingRead){
     int framesRead = sr2->read(targetData, 5);
 
     for (int i = 0; i < 10; ++i) {
-        ASSERT_EQ(sourceData[i], targetData[i]) << "Failure at index: " << i;
+        ASSERT_EQ(sourceData[i], targetData[i]) << "Failed at i=" << i;
     }
 
     ASSERT_EQ(framesRead, 5);
 }
 
-TEST_F (SoundRecordingTest, FloatRead){
-
-    sr3->write(sourceData, 10);
-    sr3->read(targetData, 10);
-
-    for (int i = 0; i < 10; ++i) {
-        ASSERT_EQ(sourceData[i], targetData[i]);
-    }
-}
+//TEST_F (SoundRecordingTest,)
