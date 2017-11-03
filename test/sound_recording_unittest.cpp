@@ -164,12 +164,10 @@ TEST_F (SoundRecordingTest, StereoRecordingRead){
 
 TEST_F (SoundRecordingTest, FloatRead){
 
-    FAIL();
-    /*
     sr3->write(sourceData, 10);
     sr3->read(targetData, 10);
 
     for (int i = 0; i < 10; ++i) {
         ASSERT_EQ(sourceData[i], targetData[i]);
-    }*/
+    }
 }
