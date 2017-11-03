@@ -1,4 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) 2017 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/mainLayout"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -8,24 +23,24 @@
     tools:context="com.example.donturner.wavemaker2.MainActivity">
 
     <TextView
-        android:id="@+id/buttonRecord"
+        android:id="@+id/button_record"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="RECORD"
+        android:text="@string/record"
         tools:layout_editor_absoluteX="16dp"
         tools:layout_editor_absoluteY="16dp"
         android:padding="36dp"
-        android:background="#ff9999"/>
+        android:background="@color/light_red"/>
 
     <TextView
-        android:id="@+id/buttonPlay"
+        android:id="@+id/button_play"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:padding="36dp"
-        android:text="PLAY"
+        android:text="@string/play"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonRecord"
-        android:background="#ccffcc"/>
+        app:layout_constraintTop_toBottomOf="@+id/button_record"
+        android:background="@color/light_green"/>
 </android.support.constraint.ConstraintLayout>

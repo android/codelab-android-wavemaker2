@@ -49,3 +49,5 @@ Java_com_example_donturner_wavemaker2_MainActivity_stopEngine(JNIEnv *env, jobje
 
     audioEngine.stop();
 }
+
+}// End extern "C"

@@ -7,7 +7,7 @@ This repository contains the source code for the codelab.
 ![App screenshot](wavemaker2-screenshot.png "WaveMaker2 screenshot")
 
 ### Resources
- 
+
 - [Making Waves (Part 1) codelab](https://codelabs.developers.google.com/codelabs/making-waves-1-synth)
 - [High-performance audio samples](https://github.com/googlesamples/android-audio-high-performance/)
 - [High-performance audio guide on the Android NDK documentation](https://developer.android.com/ndk/guides/audio/index.html)

@@ -21,6 +21,12 @@
 #include <array>
 #include "Definitions.h"
 
+// At a sample rate of 48000 samples/second 262144 (2^18) represents 5.46 seconds of audio.
+// Each sample is stored as a float (4 bytes) so a mono SoundRecording (channelCount = 1)
+// will allocate 1MB of memory. A stereo recording will allocate 2MB of memory.
+constexpr int kMaxSamples = 262144; // 1 << 18;
+
+
 class SoundRecording {
 
 public:
@@ -28,14 +34,11 @@ public:
     ~SoundRecording();
     void write(const float *sourceData, int32_t numFrames);
     int32_t read(float *targetData, int32_t numFrames);
-    void clear();
-    bool isFull();
-    void resetPlayHead();
-    void resetWriteHead();
-    void setLooping(bool isLooping);
-    int32_t getLength();
-    int32_t getChannelCount();
-    static int32_t getMaxSamples();
+    bool isFull() { return (mTotalLength == kMaxSamples); };
+    void resetPlayHead() { mReadIndex = 0; };
+    void resetWriteHead() { mWriteIndex = 0; };
+    void setLooping(bool isLooping) { mIsLooping = isLooping; };
+    int32_t getLength() { return mTotalLength; };
 
 private:
     int32_t mChannelCount;

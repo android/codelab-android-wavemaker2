@@ -23,23 +23,21 @@ aaudio_data_callback_result_t recordingCallback(
         AAudioStream __unused *stream,
         void *userData,
         void *audioData,
-        int32_t numFrames){
+        int32_t numFrames) {
 
-    return ((AudioEngine *) userData)->recordingCallback(audioData,
-                                                         numFrames);
+    return ((AudioEngine *) userData)->recordingCallback(audioData, numFrames);
 }
 
 aaudio_data_callback_result_t playbackCallback(
         AAudioStream __unused *stream,
         void *userData,
         void *audioData,
-        int32_t numFrames){
+        int32_t numFrames) {
 
-    return ((AudioEngine *) userData)->playbackCallback(audioData,
-                                                        numFrames);
+    return ((AudioEngine *) userData)->playbackCallback(audioData, numFrames);
 }
 
-AudioEngine::AudioEngine(){
+AudioEngine::AudioEngine() {
     mSoundRecording.setLooping(true);
 }
 
@@ -51,17 +49,19 @@ AudioEngine::~AudioEngine(){
 
 void AudioEngine::start() {
 
-    AAudioStreamBuilder *builder;
+    AAudioStreamBuilder *playbackBuilder;
 
     // Create the playback stream.
-    AAudio_createStreamBuilder(&builder);
-    AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
-    AAudioStreamBuilder_setSharingMode(builder, AAUDIO_SHARING_MODE_EXCLUSIVE);
-    AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_FLOAT);
-    AAudioStreamBuilder_setChannelCount(builder, kChannelCountStereo);
-    AAudioStreamBuilder_setDataCallback(builder, ::playbackCallback, this);
+    AAudio_createStreamBuilder(&playbackBuilder);
+    AAudioStreamBuilder_setPerformanceMode(playbackBuilder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+    AAudioStreamBuilder_setSharingMode(playbackBuilder, AAUDIO_SHARING_MODE_EXCLUSIVE);
+    AAudioStreamBuilder_setFormat(playbackBuilder, AAUDIO_FORMAT_PCM_FLOAT);
+    AAudioStreamBuilder_setChannelCount(playbackBuilder, kChannelCountStereo);
+    AAudioStreamBuilder_setDataCallback(playbackBuilder, ::playbackCallback, this);
 
-    aaudio_result_t result = AAudioStreamBuilder_openStream(builder, &mPlaybackStream);
+    aaudio_result_t result = AAudioStreamBuilder_openStream(playbackBuilder, &mPlaybackStream);
+    AAudioStreamBuilder_delete(playbackBuilder);
+
     if (result != AAUDIO_OK){
         __android_log_print(ANDROID_LOG_DEBUG, "AudioEngine::startEngine()",
                             "Error opening playback stream %s",
@@ -82,60 +82,61 @@ void AudioEngine::start() {
     }
 
     // Create the recording stream.
-    AAudio_createStreamBuilder(&builder);
-    AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_INPUT);
-    AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
-    AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_I16);
-    AAudioStreamBuilder_setSampleRate(builder, sampleRate);
-    AAudioStreamBuilder_setChannelCount(builder, kChannelCountMono);
-    AAudioStreamBuilder_setDataCallback(builder, ::recordingCallback, this);
+    AAudioStreamBuilder *recordingBuilder;
+    AAudio_createStreamBuilder(&recordingBuilder);
+    AAudioStreamBuilder_setDirection(recordingBuilder, AAUDIO_DIRECTION_INPUT);
+    AAudioStreamBuilder_setPerformanceMode(recordingBuilder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+    AAudioStreamBuilder_setFormat(recordingBuilder, AAUDIO_FORMAT_PCM_I16);
+    AAudioStreamBuilder_setSampleRate(recordingBuilder, sampleRate);
+    AAudioStreamBuilder_setChannelCount(recordingBuilder, kChannelCountMono);
+    AAudioStreamBuilder_setDataCallback(recordingBuilder, ::recordingCallback, this);
 
-    result = AAudioStreamBuilder_openStream(builder, &mRecordingStream);
+    result = AAudioStreamBuilder_openStream(recordingBuilder, &mRecordingStream);
+    AAudioStreamBuilder_delete(recordingBuilder);
+
     if (result != AAUDIO_OK){
-        __android_log_print(ANDROID_LOG_DEBUG, "AudioEngine::startEngine()",
+        __android_log_print(ANDROID_LOG_DEBUG, __func__,
                             "Error opening recording stream %s",
                             AAudio_convertResultToText(result));
         return;
     }
 
     // Allocate memory for the conversion buffer now we know what our maximum buffer size is.
-    mConversionBuffer = new float[AAudioStream_getBufferCapacityInFrames(mRecordingStream)
-                                 * kChannelCountStereo];
+    mConversionBuffer = std::make_unique<float[]>(
+            (size_t) AAudioStream_getBufferCapacityInFrames(mRecordingStream)
+            * kChannelCountStereo);
 
     result = AAudioStream_requestStart(mRecordingStream);
     if (result != AAUDIO_OK){
-        __android_log_print(ANDROID_LOG_DEBUG, "AudioEngine::startEngine()",
+        __android_log_print(ANDROID_LOG_DEBUG, __func__,
                             "Error starting recording stream %s",
                             AAudio_convertResultToText(result));
         return;
     }
+
+
 }
 
-void AudioEngine::stop(){
+void AudioEngine::stop() {
 
-    if (mPlaybackStream != nullptr){
-        AAudioStream_requestStop(mPlaybackStream);
-        AAudioStream_close(mPlaybackStream);
-    }
-
-    if (mRecordingStream != nullptr){
-        AAudioStream_requestStop(mRecordingStream);
-        AAudioStream_close(mRecordingStream);
-    }
+    stopStream(mPlaybackStream);
+    closeStream(mPlaybackStream);
+    stopStream(mRecordingStream);
+    closeStream(mRecordingStream);
 }
 
 aaudio_data_callback_result_t AudioEngine::recordingCallback(void *audioData,
                                                              int32_t numFrames) {
 
-    if (mIsRecording.load()){
+    if (mIsRecording.load()) {
 
         convertArrayInt16ToFloat(static_cast<int16_t *>(audioData),
-                                 mConversionBuffer, numFrames * kChannelCountMono);
-        convertArrayMonoToStereo(mConversionBuffer, numFrames);
-        mSoundRecording.write(mConversionBuffer, numFrames);
+                                 mConversionBuffer.get(), numFrames * kChannelCountMono);
+        convertArrayMonoToStereo(mConversionBuffer.get(), numFrames);
+        mSoundRecording.write(mConversionBuffer.get(), numFrames);
     }
 
-    if (mSoundRecording.isFull()){
+    if (mSoundRecording.isFull()) {
         mIsRecording.store(false);
     }
 
@@ -146,10 +147,10 @@ aaudio_data_callback_result_t AudioEngine::playbackCallback(void *audioData, int
 
     float *audioDataFloat = static_cast<float *>(audioData);
 
-    if (mIsPlaying.load()){
+    if (mIsPlaying.load()) {
         int32_t framesRead = mSoundRecording.read(audioDataFloat, numFrames);
 
-        if (framesRead != numFrames){
+        if (framesRead != numFrames) {
 
             // Pad the remaining samples with zeros (silence).
             float *firstEmptySample = audioDataFloat + (framesRead * kChannelCountStereo);
@@ -173,10 +174,35 @@ void AudioEngine::setRecording(bool isRecording) {
 }
 
 void AudioEngine::setPlaying(bool isPlaying) {
-    if (isPlaying){
+    if (isPlaying) {
         mSoundRecording.resetPlayHead();
         __android_log_print(ANDROID_LOG_DEBUG, "AudioEngine", "Playing sample, length %d",
                             mSoundRecording.getLength());
     }
     mIsPlaying.store(isPlaying);
 }
+
+void AudioEngine::stopStream(AAudioStream *stream) const {
+
+    if (stream != nullptr){
+        aaudio_result_t result = AAudioStream_requestStop(stream);
+        if (result != AAUDIO_OK){
+            __android_log_print(ANDROID_LOG_DEBUG, __func__, "Error stopping stream %s",
+                                AAudio_convertResultToText(result));
+        }
+    }
+}
+
+void AudioEngine::closeStream(AAudioStream *stream) const {
+
+    if (stream != nullptr){
+        aaudio_result_t result = AAudioStream_close(stream);
+        if (result != AAUDIO_OK){
+            __android_log_print(ANDROID_LOG_DEBUG, __func__, "Error closing stream %s",
+                                AAudio_convertResultToText(result));
+        }
+    }
+}
+
+
+

@@ -39,9 +39,13 @@ private:
     std::atomic<bool> mIsRecording = {false};
     std::atomic<bool> mIsPlaying = {false};
     SoundRecording mSoundRecording = {kChannelCountStereo};
-    float* mConversionBuffer = nullptr;
+    std::unique_ptr<float[]> mConversionBuffer = nullptr;
     AAudioStream* mPlaybackStream = nullptr;
     AAudioStream* mRecordingStream = nullptr;
+
+    void stopStream(AAudioStream *stream) const;
+
+    void closeStream(AAudioStream *stream) const;
 };
 
 #endif //WAVEMAKER2_AUDIOENGINE_H

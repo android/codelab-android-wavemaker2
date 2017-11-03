@@ -18,6 +18,7 @@ package com.example.donturner.wavemaker2;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -27,7 +28,7 @@ import android.view.View;
 
 import static android.support.v4.content.PermissionChecker.PERMISSION_GRANTED;
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity {
 
     private static final int WAVEMAKER2_REQUEST = 0;
     private static final String TAG = MainActivity.class.toString();
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        View recordButton = findViewById(R.id.buttonRecord);
+        View recordButton = findViewById(R.id.button_record);
         recordButton.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity{
             }
         });
 
-        View playButton = findViewById(R.id.buttonPlay);
+        View playButton = findViewById(R.id.button_play);
         playButton.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -91,11 +92,12 @@ public class MainActivity extends AppCompatActivity{
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
         // Check that our permission was granted
         if (permissions.length > 0 &&
                 permissions[0].equals(Manifest.permission.RECORD_AUDIO) &&
-                grantResults[0] == PERMISSION_GRANTED){
+                grantResults[0] == PERMISSION_GRANTED) {
             startEngine();
         }
     }
