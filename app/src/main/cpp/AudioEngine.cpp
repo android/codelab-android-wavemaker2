@@ -73,65 +73,7 @@ StreamBuilder makeStreamBuilder(){
 
 void AudioEngine::start() {
 
-    // Create the playback stream.
-    StreamBuilder playbackBuilder = makeStreamBuilder();
-    AAudioStreamBuilder_setFormat(playbackBuilder.get(), AAUDIO_FORMAT_PCM_FLOAT);
-    AAudioStreamBuilder_setChannelCount(playbackBuilder.get(), kChannelCountStereo);
-    AAudioStreamBuilder_setPerformanceMode(playbackBuilder.get(), AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
-    AAudioStreamBuilder_setSharingMode(playbackBuilder.get(), AAUDIO_SHARING_MODE_EXCLUSIVE);
-    AAudioStreamBuilder_setDataCallback(playbackBuilder.get(), ::playbackDataCallback, this);
-    AAudioStreamBuilder_setErrorCallback(playbackBuilder.get(), ::errorCallback, this);
-
-    aaudio_result_t result = AAudioStreamBuilder_openStream(playbackBuilder.get(), &mPlaybackStream);
-
-    if (result != AAUDIO_OK){
-        __android_log_print(ANDROID_LOG_DEBUG, __func__,
-                            "Error opening playback stream %s",
-                            AAudio_convertResultToText(result));
-        return;
-    }
-
-    // Obtain the sample rate from the playback stream so we can request the same sample rate from
-    // the recording stream.
-    int32_t sampleRate = AAudioStream_getSampleRate(mPlaybackStream);
-
-    result = AAudioStream_requestStart(mPlaybackStream);
-    if (result != AAUDIO_OK){
-        __android_log_print(ANDROID_LOG_DEBUG, __func__,
-                            "Error starting playback stream %s",
-                            AAudio_convertResultToText(result));
-        closeStream(&mPlaybackStream);
-        return;
-    }
-
-    // Create the recording stream.
-    StreamBuilder recordingBuilder = makeStreamBuilder();
-    AAudioStreamBuilder_setDirection(recordingBuilder.get(), AAUDIO_DIRECTION_INPUT);
-    AAudioStreamBuilder_setPerformanceMode(recordingBuilder.get(), AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
-    AAudioStreamBuilder_setSharingMode(recordingBuilder.get(), AAUDIO_SHARING_MODE_EXCLUSIVE);
-    AAudioStreamBuilder_setFormat(recordingBuilder.get(), AAUDIO_FORMAT_PCM_FLOAT);
-    AAudioStreamBuilder_setSampleRate(recordingBuilder.get(), sampleRate);
-    AAudioStreamBuilder_setChannelCount(recordingBuilder.get(), kChannelCountMono);
-    AAudioStreamBuilder_setDataCallback(recordingBuilder.get(), ::recordingDataCallback, this);
-    AAudioStreamBuilder_setErrorCallback(recordingBuilder.get(), ::errorCallback, this);
-
-    result = AAudioStreamBuilder_openStream(recordingBuilder.get(), &mRecordingStream);
-
-    if (result != AAUDIO_OK){
-        __android_log_print(ANDROID_LOG_DEBUG, __func__,
-                            "Error opening recording stream %s",
-                            AAudio_convertResultToText(result));
-        closeStream(&mRecordingStream);
-        return;
-    }
-
-    result = AAudioStream_requestStart(mRecordingStream);
-    if (result != AAUDIO_OK){
-        __android_log_print(ANDROID_LOG_DEBUG, __func__,
-                            "Error starting recording stream %s",
-                            AAudio_convertResultToText(result));
-        return;
-    }
+    // TODO Create streams
 }
 
 void AudioEngine::stop() {
@@ -154,35 +96,24 @@ void AudioEngine::restart(){
 
 aaudio_data_callback_result_t AudioEngine::recordingCallback(float *audioData,
                                                              int32_t numFrames) {
-    if (mIsRecording) {
-        int32_t framesWritten = mSoundRecording.write(audioData, numFrames);
-        if (framesWritten == 0) mIsRecording = false;
-    }
+    // TODO Store the recorded data
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
 
 aaudio_data_callback_result_t AudioEngine::playbackCallback(float *audioData, int32_t numFrames) {
 
-    fillArrayWithZeros(audioData, numFrames * kChannelCountStereo);
-
-    if (mIsPlaying) {
-        int32_t framesRead = mSoundRecording.read(audioData, numFrames);
-        convertArrayMonoToStereo(audioData, framesRead);
-        if (framesRead < numFrames) mIsPlaying = false;
-    }
+    // TODO Play the recorded data
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
 
 void AudioEngine::setRecording(bool isRecording) {
 
-    if (isRecording) mSoundRecording.clear();
-    mIsRecording = isRecording;
+    // TODO Start and stop recording
 }
 
 void AudioEngine::setPlaying(bool isPlaying) {
 
-    if (isPlaying) mSoundRecording.setReadPositionToStart();
-    mIsPlaying = isPlaying;
+    // TODO Start and stop playback
 }
 
 void AudioEngine::stopStream(AAudioStream *stream) const {
@@ -215,5 +146,5 @@ void AudioEngine::closeStream(AAudioStream **stream) const {
 }
 
 void AudioEngine::setLooping(bool isOn) {
-    mSoundRecording.setLooping(isOn);
+    // TODO Toggle looped playback
 }
