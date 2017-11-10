@@ -30,10 +30,9 @@ class SoundRecording {
 public:
     int32_t write(const float *sourceData, int32_t numSamples);
     int32_t read(float *targetData, int32_t numSamples);
-    void clear() { mWriteIndex = 0; };
     bool isFull() const { return (mWriteIndex == kMaxSamples); };
-    void resetReadHead() { mReadIndex = 0; };
-    void resetWriteHead() { mWriteIndex = 0; };
+    void setReadPositionToStart() { mReadIndex = 0; };
+    void clear() { mWriteIndex = 0; };
     void setLooping(bool isLooping) { mIsLooping = isLooping; };
     int32_t getLength() const { return mWriteIndex; };
     static const int32_t getMaxSamples() { return kMaxSamples; };

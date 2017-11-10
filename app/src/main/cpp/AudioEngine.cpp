@@ -175,21 +175,14 @@ aaudio_data_callback_result_t AudioEngine::playbackCallback(float *audioData, in
 
 void AudioEngine::setRecording(bool isRecording) {
 
-    // If we're starting a new recording then clear the old one
-    if (isRecording && !mIsRecording) {
-        mSoundRecording.clear();
-        mSoundRecording.resetWriteHead();
-    }
-    mIsRecording.store(isRecording);
+    if (isRecording) mSoundRecording.clear();
+    mIsRecording = isRecording;
 }
 
 void AudioEngine::setPlaying(bool isPlaying) {
-    if (isPlaying) {
-        mSoundRecording.resetReadHead();
-        __android_log_print(ANDROID_LOG_DEBUG, __func__, "Playing sample, length %d",
-                            mSoundRecording.getLength());
-    }
-    mIsPlaying.store(isPlaying);
+
+    if (isPlaying) mSoundRecording.setReadPositionToStart();
+    mIsPlaying = isPlaying;
 }
 
 void AudioEngine::stopStream(AAudioStream *stream) const {
